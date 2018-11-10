@@ -39,7 +39,7 @@ app.get('/answer', (req, res) => {
   const { url, query } = req.query
   if (url && query) {
     getAnswerKey(url).then(answerKey => {
-      const answer = getAnswers(answerKey, query)
+      const answer = getAnswers(url, answerKey, query)
       res.json(answer)
     })
   } else {
@@ -78,7 +78,7 @@ async function getAnswerKey(url) {
   }
 }
 
-function getAnswers(answerKey, selection) {
+function getAnswers(url, answerKey, selection) {
   const startIndex = answerKey.indexOf(selection)
   const htmlFromStartIndex = answerKey.slice(startIndex)
   const endIndex = htmlFromStartIndex.indexOf('<li><strong>')
@@ -90,22 +90,24 @@ function getAnswers(answerKey, selection) {
     match = regex.exec(answerHtml)
     if (match) matches.push(match[1])
   } while (match !== null)
-  console.log(selection, matches)
+  console.log(url, selection, matches)
   return matches
 }
 
 io.on('connection', socket => {
   console.log('a user connected')
   let answerKey = answerKeys.get('default') || ''
+  let url = ''
 
-  socket.on('request', async url => {
-    answerKey = await getAnswerKey(url)
-    console.log(`answer key "${url}" loaded for user "${socket.id}"`)
+  socket.on('request', async u => {
+    url = u
+    answerKey = await getAnswerKey(u)
+    console.log(`answer key "${u}" loaded for user "${socket.id}"`)
     socket.emit('fulfilled', getAnswerKeyName(answerKey))
   })
 
   socket.on('selection', selection => {
-    const answers = getAnswers(answerKey, selection)
+    const answers = getAnswers(url, answerKey, selection)
     if (answers) {
       socket.emit('answer', answers)
     } else {
