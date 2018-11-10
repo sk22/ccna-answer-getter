@@ -26,8 +26,8 @@ const sendIndexText = (req, res) => {
   const protocol = req.hostname === 'localhost' ? 'http' : 'https'
   res.send(
     `// ${shortReadme.split('\n').join('\n// ')}\n\n` +
-      `let server = '${protocol}://${req.headers.host}'\n` +
-      `let url = '${req.query.url || defaultUrl}'\n\n` +
+      `server = '${protocol}://${req.headers.host}'\n` +
+      `url = '${req.query.url || defaultUrl}'\n\n` +
       clientScript
   )
 }
