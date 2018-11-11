@@ -1,11 +1,13 @@
 const express = require('express')
 const app = express()
+const { parse } = require('url')
 
 const http = require('http').Server(app)
 const io = require('socket.io')(http)
 const fs = require('fs')
 const fetch = require('node-fetch')
 const { fromString: htmlToText } = require('html-to-text')
+const searches = require('./lib/searches')
 
 const answerKeys = new Map()
 const answerFile = process.argv.length === 3 ? process.argv[2] : 'answers.html'
@@ -17,28 +19,33 @@ You can access the console inside the assessment by pressing Ctrl+Shift+I or F12
 Then, select a question and the answer will be displayed in the website's title
 (at the top of the browser window).`
 
-const booleanCheckbox = onOff => onOff === 'on' ? true : false
+const booleanCheckbox = onOff => (onOff === 'on' ? true : false)
 
 const sendIndexText = (req, res) => {
   res.set('Content-Type', 'text/plain')
   const protocol = req.hostname === 'localhost' ? 'http' : 'https'
+  console.log(req.query.update_interval)
   const config = {
     SERVER: `${protocol}://${req.headers.host}`,
     URL: `${req.query.url}`,
     UPDATE_TITLE: booleanCheckbox(req.query.update_title),
-    RESET_TITLE_TIMEOUT: Number(req.query.reset_title_timeout),
+    RESET_TITLE_TIMEOUT: Number(req.query.reset_title_timeout || NaN),
     RESET_TITLE_ON_DESELECT: booleanCheckbox(req.query.reset_title_on_deselect),
     AUTO_CHECKBOXES: booleanCheckbox(req.query.auto_checkboxes),
     USE_INTERVAL: booleanCheckbox(req.query.use_interval),
-    UPDATE_INTERVAL: Number(req.query.update_interval)
+    UPDATE_INTERVAL: Number(req.query.update_interval|| NaN),
+    ANSWER_REGEX: req.query.answer_regex,
+    QUESTION_BEGINNING: req.query.question_beginning
   }
 
   const clientScript = fs.readFileSync('lib/client.js')
   const socketioScript = fs.readFileSync('lib/socketio.min.js')
   res.send(
     `// ${shortReadme.split('\n').join('\n// ')}\n\n` +
-    `config = ${JSON.stringify(config, null, 2)}\n\n` +
-    clientScript + socketioScript + `client(config)`
+      `config = ${JSON.stringify(config, null, 2)}\n\n` +
+      clientScript +
+      socketioScript +
+      `client(config)`
   )
 }
 
@@ -90,19 +97,31 @@ async function getAnswerKey(url) {
 
 function sanitize(text) {
   return text
-    .replace(/’/g, '\'')
+    .replace(/’/g, "'")
     .replace(/\n/, ' ')
     .trim()
 }
 
-function getAnswers(url, answerKey, selection) {
+function getHostname(url) {
+  const fullHostname = parse(url).hostname
+  return fullHostname.startsWith('www.')
+    ? fullHostname.slice('www.'.length)
+    : fullHostname
+}
+
+function getSearch(url) {
+  return searches[getHostname(url)]
+}
+
+function getAnswers(url, answerKey, selection, search) {
   const startIndex = answerKey.indexOf(selection)
   const htmlFromStartIndex = answerKey.slice(startIndex)
-  const endIndex = htmlFromStartIndex.indexOf('<li><strong>')
+  const endIndex = htmlFromStartIndex.indexOf(search.questionBeginning)
   const answerHtml = htmlFromStartIndex.slice(0, endIndex)
-  const regex = /<span style="color: (?:red|#ff0000);"><strong>([\s\S]+?)<\/strong><\/span>/g
+  const regex = search.answerRegex
   const matches = []
   let match
+
   do {
     match = regex.exec(answerHtml)
     if (match) matches.push(match[1])
@@ -116,11 +135,14 @@ io.on('connection', socket => {
   console.log('a user connected')
   let answerKey = answerKeys.get('default') || ''
   let url = ''
+  let search
 
-  socket.on('debug', text => console.debug(`DEBUG[${socket.id}][${url}]`, text))
+  socket.on('debug', text => console.debug(`DEBUG [${socket.id}] [${url}]`, text))
 
   socket.on('request', async u => {
     url = u
+    search = getSearch(url)
+
     answerKey = await getAnswerKey(u)
     console.log(`answer key "${u}" loaded for user "${socket.id}"`)
     socket.emit('fulfilled', getAnswerKeyName(answerKey))
@@ -128,12 +150,17 @@ io.on('connection', socket => {
 
   socket.on('selection', selection => {
     if (selection.length < 5) return
-    const answers = getAnswers(url, answerKey, selection)
+    const answers = getAnswers(url, answerKey, selection, search)
     if (answers) {
       socket.emit('answer', answers)
     } else {
       socket.emit('answer', "Answer key didn't load")
     }
+  })
+
+  socket.on('search', s => {
+    console.log('search parameters applied: ', s)
+    search = s
   })
 })
 

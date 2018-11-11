@@ -21,6 +21,12 @@
       margin-bottom: 0.3rem;
       border-radius: 0.2rem;
     }
+    input[type=text] {
+      width: 35rem;
+    }
+    input[type=number] {
+      width: 5rem;
+    }
   </style>
 </head>
   <body>
@@ -34,18 +40,25 @@
       <br>
       <label for="reset_title_on_deselect">Reset title on deselect</label>
       <input type="checkbox" name="reset_title_on_deselect" id="reset_title_on_deselect" checked>
-      or
-      <label for="reset_title_timeout">reset title after timeout (-1 = don't reset after timeout)</label>
-      <input type="number" name="reset_title_timeout" id="reset_title_timeout" value="-1">
+      <br>
+      <label for="reset_title_timeout">Reset title after timeout</label>
+      <input type="number" name="reset_title_timeout" id="reset_title_timeout" placeholder="-1">
+      (-1 = don't reset after timeout)
       <br>
       <label for="auto_checkboxes">Automatically tick checkboxes</label>
-      <input type="checkbox" name="auto_checkboxes" id="auto_checkboxes" checked>
+      <input type="checkbox" name="auto_checkboxes" id="auto_checkboxes">
       <br>
-      <label for="use_interval">Update interval</label> (don't use, except
-      <code>mouseup</code> events don't fire for some reason, e.g. you're using
-      touch)<br>
-      <input type="checkbox" name="use_interval" id="use_interval">
-      <input type="number" name="update_interval" id="update_interval" value="1000">
+      <p>Don't use except <code>mouseup</code> events don't fire for some reason,
+      e.g. you're using touch</p>
+      <label for="use_interval">Update interval</label><input type="checkbox" name="use_interval" id="use_interval">
+      <input type="number" name="update_interval" id="update_interval" placeholder="1000">
+      <br>
+      <p>Set those if using an unknown answers site</p>
+      <label for="answer_regex">Answer RegEx</label>
+      <input type="text" name="answer_regex" id="answer_regex" placeholder='<span style="color: (?:red|#ff0000);"><strong>([\s\S]+?)<\/strong><\/span>'>
+      <br>
+      <label for="question_beginning">Question beginning</label>
+      <input type="text" name="question_beginning" id="question_beginning" placeholder="<li><strong>">
       <br>
       <input type="submit" class="submit">
     </form>
