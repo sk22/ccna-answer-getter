@@ -5,30 +5,40 @@ const http = require('http').Server(app)
 const io = require('socket.io')(http)
 const fs = require('fs')
 const fetch = require('node-fetch')
+const { fromString: htmlToText } = require('html-to-text')
 
 const answerKeys = new Map()
 const answerFile = process.argv.length === 3 ? process.argv[2] : 'answers.html'
-const clientScript = fs.readFileSync('client.js')
-
 
 app.use(express.static('public'))
-
-const defaultUrl =
-  'https://ccnav6.com/ccna-3-final-exam-answers-2017-v5-0-3v6-0-scaling-networks.html'
 
 const shortReadme = `Press Ctrl+A, Ctrl+C and paste it into the assessment's console.
 You can access the console inside the assessment by pressing Ctrl+Shift+I or F12.
 Then, select a question and the answer will be displayed in the website's title
 (at the top of the browser window).`
 
+const booleanCheckbox = onOff => onOff === 'on' ? true : false
+
 const sendIndexText = (req, res) => {
   res.set('Content-Type', 'text/plain')
   const protocol = req.hostname === 'localhost' ? 'http' : 'https'
+  const config = {
+    SERVER: `${protocol}://${req.headers.host}`,
+    URL: `${req.query.url}`,
+    UPDATE_TITLE: booleanCheckbox(req.query.update_title),
+    RESET_TITLE_TIMEOUT: Number(req.query.reset_title_timeout),
+    RESET_TITLE_ON_DESELECT: booleanCheckbox(req.query.reset_title_on_deselect),
+    AUTO_CHECKBOXES: booleanCheckbox(req.query.auto_checkboxes),
+    USE_INTERVAL: booleanCheckbox(req.query.use_interval),
+    UPDATE_INTERVAL: Number(req.query.update_interval)
+  }
+
+  const clientScript = fs.readFileSync('lib/client.js')
+  const socketioScript = fs.readFileSync('lib/socketio.min.js')
   res.send(
     `// ${shortReadme.split('\n').join('\n// ')}\n\n` +
-      `server = '${protocol}://${req.headers.host}'\n` +
-      `url = '${req.query.url || defaultUrl}'\n\n` +
-      clientScript
+    `config = ${JSON.stringify(config, null, 2)}\n\n` +
+    clientScript + socketioScript + `client(config)`
   )
 }
 
@@ -78,26 +88,36 @@ async function getAnswerKey(url) {
   }
 }
 
+function sanitize(text) {
+  return text
+    .replace(/’/g, '\'')
+    .replace(/\n/, ' ')
+    .trim()
+}
+
 function getAnswers(url, answerKey, selection) {
   const startIndex = answerKey.indexOf(selection)
   const htmlFromStartIndex = answerKey.slice(startIndex)
   const endIndex = htmlFromStartIndex.indexOf('<li><strong>')
   const answerHtml = htmlFromStartIndex.slice(0, endIndex)
-  const regex = /<span style="color: red;"><strong>(.*?)<\/strong><\/span>/g
+  const regex = /<span style="color: (?:red|#ff0000);"><strong>([\s\S]+?)<\/strong><\/span>/g
   const matches = []
   let match
   do {
     match = regex.exec(answerHtml)
     if (match) matches.push(match[1])
   } while (match !== null)
-  console.log(url, selection, matches)
-  return matches
+  const answers = matches.map(htmlToText).map(sanitize)
+  console.log(url, selection, answers)
+  return answers
 }
 
 io.on('connection', socket => {
   console.log('a user connected')
   let answerKey = answerKeys.get('default') || ''
   let url = ''
+
+  socket.on('debug', text => console.debug(`DEBUG[${socket.id}][${url}]`, text))
 
   socket.on('request', async u => {
     url = u
@@ -107,6 +127,7 @@ io.on('connection', socket => {
   })
 
   socket.on('selection', selection => {
+    if (selection.length < 5) return
     const answers = getAnswers(url, answerKey, selection)
     if (answers) {
       socket.emit('answer', answers)

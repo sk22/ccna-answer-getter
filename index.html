@@ -7,16 +7,37 @@
   <title>CCNA Answer Key</title>
   <style>
     img {
-      max-width: 60%;
+      width: 50rem;
+      max-width: 100%;
       margin-top: 1rem;
+    }
+    .submit {
+      margin-top: 0.5rem;
     }
   </style>
 </head>
   <body>
     <form action="/script" method="GET">
-      <label for="url">Answer Key URL: </label>
+      <label for="url">Answer Key URL</label>
       <input type="text" name="url" id="url">
-      <input type="submit">
+      <br>
+      <label for="update_title">Update title</label>
+      <input type="checkbox" name="update_title" id="update_title" checked>
+      <br>
+      <label for="reset_title_timeout">Reset title timeout (-1 = don't reset title)</label>
+      <input type="number" name="reset_title_timeout" id="reset_title_timeout" value="-1">
+      <br>
+      <label for="reset_title_on_deselect">Reset title on deselect</label>
+      <input type="checkbox" name="reset_title_on_deselect" id="reset_title_on_deselect" checked>
+      <br>
+      <label for="auto_checkboxes">Automatically tick checkboxes</label>
+      <input type="checkbox" name="auto_checkboxes" id="auto_checkboxes" checked>
+      <br>
+      <label for="use_interval">Update interval</label>
+      <input type="checkbox" name="use_interval" id="use_interval">
+      <input type="number" name="update_interval" id="update_interval" value="1000">
+      <br>
+      <input type="submit" class="submit">
     </form>
     <img src="images/01-answer-key.PNG">
     <img src="images/02-paste-url.PNG">

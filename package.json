@@ -12,6 +12,7 @@
   "license": "ISC",
   "dependencies": {
     "express": "^4.16.4",
+    "html-to-text": "^4.0.0",
     "node-fetch": "^2.2.1",
     "socket.io": "^2.1.1"
   }
