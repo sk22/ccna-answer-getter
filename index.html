@@ -14,6 +14,13 @@
     .submit {
       margin-top: 0.5rem;
     }
+    label {
+      display: inline-block;
+      background: rgba(0, 0, 0, 0.08);
+      padding: 0.1rem;
+      margin-bottom: 0.3rem;
+      border-radius: 0.2rem;
+    }
   </style>
 </head>
   <body>
@@ -23,17 +30,20 @@
       <br>
       <label for="update_title">Update title</label>
       <input type="checkbox" name="update_title" id="update_title" checked>
-      <br>
-      <label for="reset_title_timeout">Reset title timeout (-1 = don't reset title)</label>
-      <input type="number" name="reset_title_timeout" id="reset_title_timeout" value="-1">
+      (display the answer in the document title at the top of the browser window)
       <br>
       <label for="reset_title_on_deselect">Reset title on deselect</label>
       <input type="checkbox" name="reset_title_on_deselect" id="reset_title_on_deselect" checked>
+      or
+      <label for="reset_title_timeout">reset title after timeout (-1 = don't reset after timeout)</label>
+      <input type="number" name="reset_title_timeout" id="reset_title_timeout" value="-1">
       <br>
       <label for="auto_checkboxes">Automatically tick checkboxes</label>
       <input type="checkbox" name="auto_checkboxes" id="auto_checkboxes" checked>
       <br>
-      <label for="use_interval">Update interval</label>
+      <label for="use_interval">Update interval</label> (don't use, except
+      <code>mouseup</code> events don't fire for some reason, e.g. you're using
+      touch)<br>
       <input type="checkbox" name="use_interval" id="use_interval">
       <input type="number" name="update_interval" id="update_interval" value="1000">
       <br>
