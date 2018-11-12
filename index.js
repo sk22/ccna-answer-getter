@@ -33,7 +33,7 @@ const sendIndexText = (req, res) => {
     RESET_TITLE_ON_DESELECT: booleanCheckbox(req.query.reset_title_on_deselect),
     AUTO_CHECKBOXES: booleanCheckbox(req.query.auto_checkboxes),
     USE_INTERVAL: booleanCheckbox(req.query.use_interval),
-    UPDATE_INTERVAL: Number(req.query.update_interval|| NaN),
+    UPDATE_INTERVAL: Number(req.query.update_interval || NaN),
     ANSWER_REGEX: req.query.answer_regex,
     QUESTION_BEGINNING: req.query.question_beginning
   }
@@ -56,7 +56,7 @@ app.get('/answer', (req, res) => {
   const { url, query } = req.query
   if (url && query) {
     getAnswerKey(url).then(answerKey => {
-      const answer = getAnswers(url, answerKey, query)
+      const answer = getAnswers(url, answerKey, query, getSearch(url))
       res.json(answer)
     })
   } else {
@@ -110,12 +110,15 @@ function getHostname(url) {
 }
 
 function getSearch(url) {
-  return searches[getHostname(url)]
+  return searches[getHostname(url)] || searches.default
 }
 
 function getAnswers(url, answerKey, selection, search) {
-  const startIndex = answerKey.indexOf(selection)
-  const htmlFromStartIndex = answerKey.slice(startIndex)
+  const firstQuestionIndex = answerKey.indexOf(search.questionBeginning)
+  const htmlFromFirstQuestion = answerKey.slice(firstQuestionIndex)
+  const questionStartIndex =
+    htmlFromFirstQuestion.indexOf(selection) + firstQuestionIndex
+  const htmlFromStartIndex = answerKey.slice(questionStartIndex)
   const endIndex = htmlFromStartIndex.indexOf(search.questionBeginning)
   const answerHtml = htmlFromStartIndex.slice(0, endIndex)
   const regex = search.answerRegex
@@ -135,13 +138,24 @@ io.on('connection', socket => {
   console.log('a user connected')
   let answerKey = answerKeys.get('default') || ''
   let url = ''
-  let search
+  let search = searches.default
 
-  socket.on('debug', text => console.debug(`DEBUG [${socket.id}] [${url}]`, text))
+  function applySearch({ answerRegex, questionBeginning, custom }) {
+    search = {
+      answerRegex: new RegExp(answerRegex, 'g'),
+      questionBeginning,
+      custom
+    }
+    console.log('search parameters applied: ', search)
+  }
+
+  socket.on('debug', text =>
+    console.debug(`DEBUG [${socket.id}] [${url}]`, text)
+  )
 
   socket.on('request', async u => {
     url = u
-    search = getSearch(url)
+    if (!search.custom) applySearch(getSearch(url))
 
     answerKey = await getAnswerKey(u)
     console.log(`answer key "${u}" loaded for user "${socket.id}"`)
@@ -158,10 +172,7 @@ io.on('connection', socket => {
     }
   })
 
-  socket.on('search', s => {
-    console.log('search parameters applied: ', s)
-    search = s
-  })
+  socket.on('search', applySearch)
 })
 
 http.listen(3000, function() {
