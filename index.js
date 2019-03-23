@@ -45,7 +45,7 @@ const sendIndexText = (req, res) => {
       `config = ${JSON.stringify(config, null, 2)}\n\n` +
       clientScript +
       socketioScript +
-      `client(config)`
+      `CLIENT = client(config)`
   )
 }
 
