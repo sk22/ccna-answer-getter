@@ -32,6 +32,7 @@ const sendIndexText = (req, res) => {
     RESET_TITLE_TIMEOUT: Number(req.query.reset_title_timeout || NaN),
     RESET_TITLE_ON_DESELECT: booleanCheckbox(req.query.reset_title_on_deselect),
     AUTO_CHECKBOXES: booleanCheckbox(req.query.auto_checkboxes),
+    AUTO_FOCUS_CHECKBOXES: booleanCheckbox(req.query.auto_focus_checkboxes),
     USE_INTERVAL: booleanCheckbox(req.query.use_interval),
     UPDATE_INTERVAL: Number(req.query.update_interval || NaN),
     ANSWER_REGEX: req.query.answer_regex,
