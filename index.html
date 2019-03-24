@@ -45,12 +45,13 @@
       <input type="number" name="reset_title_timeout" id="reset_title_timeout" placeholder="0">
       (0 = don't reset after a timeout)
       <br>
-      <label for="auto_checkboxes">Automatically tick checkboxes</label>
-      <input type="checkbox" name="auto_checkboxes" id="auto_checkboxes">
+      <label for="auto_tick_checkboxes">Automatically tick checkboxes</label>
+      <input type="checkbox" name="auto_tick_checkboxes" id="auto_tick_checkboxes">
       <br>
       <label for="auto_focus_checkboxes">Automatically focus checkboxes</label>
-      <input type="checkbox" name="auto_focus_checkboxes" id="auto_focus_checkboxes">
-      (press space to tick the correct answer. multiple answers -> reselect the question for next answer)
+      <input type="checkbox" name="auto_focus_checkboxes" id="auto_focus_checkboxes" checked>
+      (Press space to tick the correct answer. Multiple answers -> reselect the
+      question for next answer. Warning: The focus will be invisible until you press space)
       <br>
       <p>Don't use except <code>mouseup</code> events don't fire for some reason,
       e.g. you're using touch</p>
